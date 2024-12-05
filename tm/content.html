@@ -159,10 +159,8 @@
             }
 
             try {
-                // 转换文件为 base64
+                // 调用 Netlify Function 上传文件
                 const fileContent = await toBase64(imageFile);
-                
-                // 调用 Netlify Function
                 const response = await fetch('/.netlify/functions/upload', {
                     method: 'POST',
                     headers: {
