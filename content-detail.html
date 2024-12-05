@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容详情</title>
+    <style>
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .content-detail {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .back-btn:hover {
+            background: #e5e5e5;
+        }
+
+        .content-image {
+            max-width: 100%;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .content-description {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            margin: 20px 0;
+        }
+
+        .content-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <a href="display.html" class="back-btn">← 返回列表</a>
+    <div class="content-detail">
+        <div id="content-image"></div>
+        <div class="content-meta">
+            发布时间：<span id="timestamp"></span>
+        </div>
+        <div id="content-description" class="content-description"></div>
+    </div>
+
+    <script>
+        // 检查登录状态
+        if (!sessionStorage.getItem('isLoggedIn')) {
+            window.location.href = 'kk.html';
+            throw new Error('未登录');
+        }
+
+        // 从 URL 获取内容 ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const contentId = urlParams.get('id');
+
+        if (!contentId) {
+            window.location.href = 'display.html';
+            throw new Error('未指定内容 ID');
+        }
+
+        // 加载内容详情
+        async function loadContentDetail() {
+            try {
+                // 添加日志查看请求的 ID
+                console.log('正在获取内容ID:', contentId);
+                
+                // 修改请求路径
+                const response = await fetch(`http://localhost:3000/content/${contentId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                // 添加日志查看响应
+                const data = await response.json();
+                console.log('获取到的数据:', data);
+
+                if (data.success && data.content) {
+                    const content = data.content;
+                    
+                    // 设置标题
+                    document.title = '内容详情 - ' + (content.description || '').substring(0, 20);
+                    
+                    // 显示图片
+                    if (content.imageUrl) {
+                        document.getElementById('content-image').innerHTML = `
+                            <img src="http://localhost:3000${content.imageUrl}" class="content-image" alt="内容图片">
+                        `;
+                    }
+                    
+                    // 显示时间戳
+                    document.getElementById('timestamp').textContent = 
+                        new Date(content.timestamp).toLocaleString();
+                    
+                    // 显示描述
+                    document.getElementById('content-description').innerHTML = content.description;
+                } else {
+                    throw new Error(data.message || '获取内容失败');
+                }
+            } catch (error) {
+                console.error('加载内容失败:', error);
+                alert('加载内容失败：' + error.message);
+                // 延迟跳转，让用户看到错误信息
+                setTimeout(() => {
+                    window.location.href = 'display.html';
+                }, 2000);
+            }
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', loadContentDetail);
+    </script>
+</body>
+</html> 

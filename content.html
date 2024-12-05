@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容上传</title>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <style>
+        .container {
+            width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .logout-btn {
+            background-color: #ff4444;
+            color: white;
+        }
+        .logout-btn:hover {
+            background-color: #cc0000;
+        }
+        .view-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .view-btn:hover {
+            background-color: #45a049;
+        }
+        .upload-section {
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .preview-image {
+            max-width: 300px;
+            margin-top: 10px;
+        }
+        #editor-container {
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .ql-editor {
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>内容上传</h2>
+            <div class="nav-buttons">
+                <button class="btn view-btn" onclick="location.href='display.html'">查看内容</button>
+                <button class="btn logout-btn" onclick="handleLogout()">退出登录</button>
+            </div>
+        </div>
+        
+        <div class="upload-section">
+            <form id="uploadForm" onsubmit="return handleSubmit(event)">
+                <div>
+                    <label>选择图片：</label>
+                    <input type="file" id="imageInput" accept="image/*" onchange="previewImage(event)">
+                    <div id="imagePreview"></div>
+                </div>
+                <div>
+                    <label>文字介绍：</label>
+                    <div id="editor-container"></div>
+                    <input type="hidden" id="description">
+                </div>
+                <button type="submit" class="btn">提交</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 添加服务器配置
+        const SERVER_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000'
+            : `http://${window.location.hostname}:3000`;
+
+        // 添加 GitHub 配置
+        const GITHUB_TOKEN = 'your_github_token';  // 需要替换为您的 GitHub token
+        const GITHUB_REPO = 'your_username/your_repo';  // 例如：'username/repo_name'
+        const GITHUB_BRANCH = 'main';
+
+        // 检查登录状态
+        if (!sessionStorage.getItem('isLoggedIn')) {
+            window.location.href = 'kk.html';
+        }
+
+        // 退出功能
+        function handleLogout() {
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'kk.html';
+        }
+
+        // 预览图片
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.innerHTML = `<img src="${e.target.result}" class="preview-image">`;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 初始化 Quill 编辑器
+        var quill = new Quill('#editor-container', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'header': 1 }, { 'header': 2 }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'script': 'sub'}, { 'script': 'super' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    [{ 'direction': 'rtl' }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'font': [] }],
+                    [{ 'align': [] }],
+                    ['clean']
+                ]
+            },
+            placeholder: '请输入内容...'
+        });
+
+        // 修改提交处理函数
+        async function handleSubmit(event) {
+            event.preventDefault();
+            
+            const imageFile = document.getElementById('imageInput').files[0];
+            const description = quill.root.innerHTML;
+
+            if (!imageFile || !description) {
+                alert('请选择图片并填写描述！');
+                return false;
+            }
+
+            try {
+                // 转换文件为 base64
+                const fileContent = await toBase64(imageFile);
+                
+                // 调用 Netlify Function
+                const response = await fetch('/.netlify/functions/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        file: {
+                            name: imageFile.name,
+                            content: fileContent
+                        },
+                        description: description
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('上传成功！');
+                    window.location.href = 'display.html';
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('上传错误:', error);
+                alert('上传出错：' + error.message);
+            }
+            
+            return false;
+        }
+
+        // 辅助函数：转换文件为 base64
+        function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内容展示</title>
+    <link href="https://www.layuicdn.com/layui/css/layui.css" rel="stylesheet">
+    <script src="https://www.layuicdn.com/layui/layui.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <style>
+        .container {
+            width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        #contentList {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .content-item {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .content-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+        }
+        .content-image {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: contain;
+            background: #f5f5f5;
+            padding: 10px;
+        }
+        .content-info {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .content-description {
+            margin-bottom: 15px;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .content-timestamp {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .content-actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .edit-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .edit-btn:hover {
+            background-color: #45a049;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        .delete-btn:hover {
+            background-color: #da190b;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: relative;
+            background: white;
+            width: 500px;
+            margin: 100px auto;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .close-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group textarea {
+            width: 100%;
+            min-height: 100px;
+        }
+        @media (max-width: 1200px) {
+            .container {
+                width: 95%;
+            }
+            #contentList {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            #contentList {
+                grid-template-columns: 1fr;
+            }
+        }
+        .image-container {
+            width: 100%;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .view-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        .view-btn:hover {
+            background-color: #1976D2;
+        }
+        .btn.view-btn {
+            background-color: #2196F3;
+            color: white;
+        }
+        .btn.view-btn:hover {
+            background-color: #1976D2;
+        }
+        .calendar-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        #calendar {
+            width: 100%;
+            background: white;
+        }
+
+        .ui-datepicker {
+            width: 100%;
+            padding: 0;
+        }
+
+        .ui-datepicker table {
+            font-size: 1em;
+            margin: 0;
+        }
+
+        .ui-datepicker td {
+            padding: 8px;
+            height: 100px;
+            vertical-align: top;
+            position: relative;
+        }
+
+        .calendar-event {
+            font-size: 12px;
+            color: #2196F3;
+            margin-top: 4px;
+            cursor: pointer;
+            padding: 2px 4px;
+            background: #E3F2FD;
+            border-radius: 2px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .reminder-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            width: 400px;
+        }
+
+        .reminder-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .reminder-form input,
+        .reminder-form textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .reminder-form textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .reminder-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .reminder-actions .btn {
+            padding: 8px 20px;
+        }
+
+        .reminder-actions .btn:first-child {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .reminder-actions .btn:last-child {
+            background-color: #2196F3;
+            color: white;
+        }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .today-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .today-btn:hover {
+            background-color: #1976D2;
+        }
+        .time-select {
+            margin-bottom: 10px;
+        }
+
+        .time-select input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2196F3;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .delete-reminder {
+            color: #f44336;
+            font-size: 16px;
+            font-weight: bold;
+            margin-left: 8px;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+
+        .delete-reminder:hover {
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: 50%;
+        }
+
+        .event-title {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .festival-day {
+            position: relative;
+        }
+
+        .festival-day a {
+            color: #e53935 !important;
+            font-weight: bold;
+        }
+
+        .festival-day::after {
+            content: attr(title);
+            position: absolute;
+            top: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: #e53935;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+
+        .ui-datepicker td.festival-day {
+            background-color: rgba(229, 57, 53, 0.05);
+        }
+
+        .ui-datepicker td a {
+            font-size: 14px;
+            text-align: center;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* 修改节日显示样式 */
+        .festival-event {
+            display: none;
+        }
+
+        /* 调整日期单元格的样式 */
+        .ui-datepicker td {
+            padding: 8px;
+            height: 100px;
+            vertical-align: top;
+            position: relative;
+        }
+
+        /* 确保节日显示在提醒事项之前 */
+        .calendar-event {
+            margin-top: 2px;
+            z-index: 2;
+        }
+
+        .calculator-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .calculator-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calculator-toggle {
+            background-color: #2196F3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .calculator-toggle:hover {
+            background-color: #1976D2;
+        }
+
+        .calculator {
+            width: 300px;
+            margin: 0 auto;
+            background: #f4f4f4;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .calculator-screen {
+            width: 100%;
+            height: 50px;
+            border: none;
+            background: #fff;
+            font-size: 24px;
+            text-align: right;
+            padding: 0 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .calculator-keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .calc-btn {
+            padding: 15px;
+            font-size: 18px;
+            border: none;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .calc-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .calc-btn.operator {
+            background: #2196F3;
+            color: white;
+        }
+
+        .calc-btn.operator:hover {
+            background: #1976D2;
+        }
+
+        /* 添加计算器相关样式 */
+        .calculator-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .calculator {
+            width: 300px;
+            margin: 20px auto;
+            background: #f4f4f4;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .calc-history {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .history-item:hover {
+            background: #f5f5f5;
+        }
+
+        .history-delete {
+            color: #f44336;
+            cursor: pointer;
+            padding: 0 8px;
+            font-weight: bold;
+        }
+
+        .history-delete:hover {
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>日程提醒</h2>
+        </div>
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <h2>日程提醒</h2>
+                <button class="btn today-btn" onclick="gotoToday()">返回今天</button>
+            </div>
+            <div id="calendar"></div>
+        </div>
+
+        <!-- 添加计算器部分 -->
+        <div class="calculator-section">
+            <div class="calculator-header">
+                <h2>计算器</h2>
+                <button class="btn calculator-toggle" onclick="toggleCalculator()">打开计算器</button>
+            </div>
+            <div id="calculator" class="calculator" style="display: none;">
+                <input type="text" class="calculator-screen" id="calc-screen" readonly value="0">
+                <div class="calculator-keys">
+                    <button class="calc-btn operator" value="clear">C</button>
+                    <button class="calc-btn operator" value="backspace">←</button>
+                    <button class="calc-btn operator" value="%">%</button>
+                    <button class="calc-btn operator" value="/">/</button>
+                    <button class="calc-btn" value="7">7</button>
+                    <button class="calc-btn" value="8">8</button>
+                    <button class="calc-btn" value="9">9</button>
+                    <button class="calc-btn operator" value="*">×</button>
+                    <button class="calc-btn" value="4">4</button>
+                    <button class="calc-btn" value="5">5</button>
+                    <button class="calc-btn" value="6">6</button>
+                    <button class="calc-btn operator" value="-">-</button>
+                    <button class="calc-btn" value="1">1</button>
+                    <button class="calc-btn" value="2">2</button>
+                    <button class="calc-btn" value="3">3</button>
+                    <button class="calc-btn operator" value="+">+</button>
+                    <button class="calc-btn" value="0">0</button>
+                    <button class="calc-btn" value=".">.</button>
+                    <button class="calc-btn operator" value="=">=</button>
+                </div>
+            </div>
+            <div id="calc-history" class="calc-history">
+                <h3>计算历史</h3>
+                <div id="history-list"></div>
+            </div>
+        </div>
+
+        <div class="header" style="margin-top: 30px;">
+            <h2>内容展示</h2>
+            <button class="btn" onclick="location.href='content.html'">返回上传</button>
+        </div>
+        <div id="contentList"></div>
+    </div>
+
+    <div id="reminderModal" class="reminder-modal">
+        <h3>添加提醒</h3>
+        <form class="reminder-form" id="reminderForm">
+            <input type="hidden" id="reminderDate">
+            <div class="time-select">
+                <input type="time" id="reminderTime" required>
+            </div>
+            <input type="text" id="reminderTitle" placeholder="提醒标题" required>
+            <textarea id="reminderContent" placeholder="提醒内容" rows="3"></textarea>
+            <div class="reminder-actions">
+                <button type="button" class="btn" onclick="closeReminderModal()">取消</button>
+                <button type="submit" class="btn">保存</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 编辑模态框 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3>编辑内容</h3>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label>图片：</label>
+                    <input type="file" id="editImage" accept="image/*">
+                    <div id="currentImage"></div>
+                </div>
+                <div class="form-group">
+                    <label>描述：</label>
+                    <textarea id="editDescription" required></textarea>
+                </div>
+                <button type="submit" class="btn edit-btn">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 添加服务器配置
+        const SERVER_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000'
+            : `http://${window.location.hostname}:3000`;
+
+        // 检查登录状态
+        if (!sessionStorage.getItem('isLoggedIn')) {
+            window.location.href = 'kk.html';
+        }
+
+        // 获取并显示内容
+        function loadContents() {
+            fetch(`${SERVER_URL}/contents`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const contentList = document.getElementById('contentList');
+                        contentList.innerHTML = '';
+                        data.contents.forEach(content => {
+                            const div = document.createElement('div');
+                            div.className = 'content-item';
+                            div.innerHTML = `
+                                <div class="image-container">
+                                    <img src="${SERVER_URL}${content.imageUrl}" class="content-image" alt="上传的图片">
+                                </div>
+                                <div class="content-info">
+                                    <div class="content-description">${content.description}</div>
+                                    <div class="content-timestamp">${new Date(content.timestamp).toLocaleString()}</div>
+                                    <div class="content-actions">
+                                        <button class="btn view-btn" onclick="viewContent(${content.id})">查看详情</button>
+                                        <button class="btn edit-btn" onclick="showEditModal(${content.id})">编辑</button>
+                                        <button class="btn delete-btn" onclick="deleteContent(${content.id})">删除</button>
+                                    </div>
+                                </div>
+                            `;
+                            contentList.appendChild(div);
+                        });
+                    }
+                })
+                .catch(error => console.error('获取内容错误:', error));
+        }
+
+        // 删除内容
+        function deleteContent(id) {
+            if (!confirm('确定要删除这条内容吗？')) return;
+
+            fetch(`${SERVER_URL}/content/${id}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('删除成功');
+                    loadContents();
+                } else {
+                    alert(data.message || '删除失败');
+                }
+            })
+            .catch(error => alert('删除出错：' + error.message));
+        }
+
+        // 修改显示编辑模态框的函数
+        function showEditModal(id) {
+            const modal = document.getElementById('editModal');
+            const contents = document.querySelectorAll('.content-item');
+            let content;
+            contents.forEach(item => {
+                if (item.querySelector('.edit-btn').getAttribute('onclick') === `showEditModal(${id})`) {
+                    content = item;
+                }
+            });
+
+            document.getElementById('editId').value = id;
+            document.getElementById('editDescription').value = 
+                content.querySelector('.content-description').textContent;
+            document.getElementById('currentImage').innerHTML = 
+                `<img src="${content.querySelector('.content-image').src}" style="max-width: 200px;">`;
+            
+            modal.style.display = 'block';
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // 修改表单提交
+        document.getElementById('editForm').onsubmit = function(e) {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const description = document.getElementById('editDescription').value;
+            const imageFile = document.getElementById('editImage').files[0];
+
+            const formData = new FormData();
+            if (imageFile) formData.append('image', imageFile);
+            formData.append('description', description);
+
+            fetch(`${SERVER_URL}/content/${id}`, {
+                method: 'PUT',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('更新成功');
+                    closeModal();
+                    loadContents();
+                } else {
+                    alert(data.message || '更新失败');
+                }
+            })
+            .catch(error => alert('更新出：' + error.message));
+        };
+
+        // 初始加载内容
+        loadContents();
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // 修改查看详情函数
+        function viewContent(id) {
+            console.log('查看内容ID:', id);
+            window.location.href = `content-detail.html?id=${id}`;
+        }
+
+        $(document).ready(function() {
+            // 首先添加中国节日数据
+            const chineseFestivals = {
+                '01-01': '元旦',
+                '02-14': '情人节',
+                '03-08': '妇女节',
+                '04-01': '愚人节',
+                '05-01': '劳动节',
+                '05-04': '青年节',
+                '06-01': '儿童节',
+                '07-01': '建党节',
+                '08-01': '建军节',
+                '09-10': '教师节',
+                '10-01': '国庆节',
+                '12-25': '圣诞节',
+                // 农历节日（这里使用2024年的公历日期作为示例）
+                '02-10': '春节',
+                '02-24': '元宵节',
+                '04-04': '清明节',
+                '06-10': '端午节',
+                '08-17': '七夕节',
+                '09-17': '中秋节',
+                '10-23': '阳节'
+            };
+
+            // 修改日历初始化代码
+            $("#calendar").datepicker({
+                dateFormat: 'yy-mm-dd',
+                showOtherMonths: true,
+                selectOtherMonths: true,
+                dayNamesMin: ['日', '一', '二', '三', '四', '五', '六'],
+                monthNames: ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'],
+                monthNamesShort: ['一月', '二月', '三月', '四月', '五月', '六月', '七', '八月', '九月', '十月', '十一月', '十二月'],
+                dayNames: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+                beforeShowDay: function(date) {
+                    // 格式化日期为 MM-DD 格式
+                    const mm = String(date.getMonth() + 1).padStart(2, '0');
+                    const dd = String(date.getDate()).padStart(2, '0');
+                    const dateString = `${mm}-${dd}`;
+                    
+                    // 检查是否是节日
+                    const festival = chineseFestivals[dateString];
+                    if (festival) {
+                        return [true, 'festival-day', festival];
+                    }
+                    return [true, '', ''];
+                },
+                onSelect: function(dateText) {
+                    showReminderModal(dateText);
+                },
+                onChangeMonthYear: function(year, month, inst) {
+                    setTimeout(() => {
+                        loadEvents();
+                    }, 100);
+                }
+            });
+
+            loadEvents();
+        });
+
+        // 修改加载事件函数
+        async function loadEvents() {
+            try {
+                // 先清除所有已有的事件显示
+                $('.calendar-event').remove();
+                
+                const response = await fetch(`${SERVER_URL}/reminders`);
+                const data = await response.json();
+                if (data.success) {
+                    data.reminders.forEach(reminder => {
+                        const date = new Date(reminder.date);
+                        const cell = $(`td[data-month='${date.getMonth()}'][data-year='${date.getFullYear()}']`).filter(function() {
+                            return $(this).find('a').text() == date.getDate();
+                        });
+                        
+                        const eventDiv = $('<div>')
+                            .addClass('calendar-event')
+                            .html(`
+                                <span class="event-title">${reminder.title}</span>
+                                <span class="delete-reminder" onclick="deleteReminder(event, ${reminder.id})">×</span>
+                            `)
+                            .click(function(e) {
+                                if (!$(e.target).hasClass('delete-reminder')) {
+                                    alert(reminder.title + '\n' + reminder.content);
+                                }
+                            });
+                        
+                        cell.append(eventDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('加载提醒失败:', error);
+            }
+        }
+
+        // 修改显���提醒弹窗函数
+        async function showReminderModal(date) {
+            try {
+                // 获取当前日期的所有提醒
+                const response = await fetch(`${SERVER_URL}/reminders`);
+                const data = await response.json();
+                const existingReminders = data.reminders.filter(reminder => 
+                    reminder.date === date
+                );
+
+                // 如果已经有提醒，显示提示
+                if (existingReminders.length > 0) {
+                    const reminderList = existingReminders
+                        .map(r => `${r.time} - ${r.title}`)
+                        .join('\n');
+                    if (!confirm(`该日期已有以下提醒：\n${reminderList}\n\n是否添加新提醒？`)) {
+                        return;
+                    }
+                }
+
+                // 显示提醒弹窗
+                const modal = document.getElementById('reminderModal');
+                document.getElementById('reminderDate').value = date;
+                document.getElementById('reminderTitle').value = '';
+                document.getElementById('reminderContent').value = '';
+                modal.style.display = 'block';
+
+                // 重新加载事件显示
+                loadEvents();
+            } catch (error) {
+                console.error('检查提醒失败:', error);
+                alert('检查醒失败');
+            }
+        }
+
+        // 关闭提醒弹窗
+        function closeReminderModal() {
+            const modal = document.getElementById('reminderModal');
+            modal.style.display = 'none';
+            document.getElementById('reminderForm').reset();
+        }
+
+        // 修改提醒表单提交
+        document.getElementById('reminderForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const date = document.getElementById('reminderDate').value;
+            const time = document.getElementById('reminderTime').value;
+            const reminder = {
+                date: date,
+                time: time,
+                title: document.getElementById('reminderTitle').value,
+                content: document.getElementById('reminderContent').value,
+                datetime: `${date}T${time}`  // 合并日期和时间
+            };
+
+            try {
+                const response = await fetch(`${SERVER_URL}/reminders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(reminder)
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('提醒添加成功！');
+                    closeReminderModal();
+                    loadEvents();
+                    setupReminder(reminder);  // 设置提醒
+                } else {
+                    alert(data.message || '添加失败！');
+                }
+            } catch (error) {
+                console.error('添加提醒失败:', error);
+                alert('添加提醒失败');
+            }
+        };
+
+        // 添加提醒检查功能
+        function setupReminder(reminder) {
+            const reminderTime = new Date(reminder.datetime).getTime();
+            const now = new Date().getTime();
+            const timeUntilReminder = reminderTime - now;
+
+            if (timeUntilReminder > 0) {
+                setTimeout(() => {
+                    showNotification(reminder);
+                }, timeUntilReminder);
+            }
+        }
+
+        // 显示通知
+        function showNotification(reminder) {
+            // 检查浏览器是否支持通知
+            if (Notification.permission === "granted") {
+                new Notification(reminder.title, {
+                    body: reminder.content,
+                    icon: '/path/to/icon.png'  // 可选：添加通知图标
+                });
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification(reminder.title, {
+                            body: reminder.content
+                        });
+                    }
+                });
+            }
+
+            // 同时在页面上显示提醒
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <h4>${reminder.title}</h4>
+                <p>${reminder.content}</p>
+            `;
+            document.body.appendChild(notification);
+
+            // 5秒后自动移除通知
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // 面加载时检查所有提醒
+        async function checkReminders() {
+            try {
+                const response = await fetch(`${SERVER_URL}/reminders`);
+                const data = await response.json();
+                if (data.success) {
+                    data.reminders.forEach(reminder => {
+                        setupReminder(reminder);
+                    });
+                }
+            } catch (error) {
+                console.error('检查提醒失败:', error);
+            }
+        }
+
+        // 页面加载时请求通知权限
+        document.addEventListener('DOMContentLoaded', () => {
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+            checkReminders();
+        });
+
+        // 在 script 标签中添加函数
+        function gotoToday() {
+            const today = new Date();
+            $("#calendar").datepicker("setDate", today);
+            loadEvents();
+            showFestivals(today.getFullYear(), today.getMonth() + 1);
+        }
+
+        // 添加删除提醒的函数
+        async function deleteReminder(event, id) {
+            event.stopPropagation();
+            if (!confirm('确定要删除这个提醒吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${SERVER_URL}/reminders/${id}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    loadEvents(); // 重新加载提醒列表
+                } else {
+                    alert(data.message || '删除失败');
+                }
+            } catch (error) {
+                console.error('删除提醒失败:', error);
+                alert('删除提醒失败');
+            }
+        }
+
+        // 添加示节日的函数
+        function showFestivals(year, month) {
+            // 清除现有的节日显示
+            $('.festival-event').remove();
+            
+            // 遍历当月的所有日期
+            for (let day = 1; day <= 31; day++) {
+                const mm = String(month).padStart(2, '0');
+                const dd = String(day).padStart(2, '0');
+                const dateString = `${mm}-${dd}`;
+                
+                const festival = chineseFestivals[dateString];
+                if (festival) {
+                    const cell = $(`td[data-month='${month-1}'][data-year='${year}']`).filter(function() {
+                        return $(this).find('a').text() == day;
+                    });
+                    
+                    if (cell.length && !cell.find('.festival-event').length) {
+                        cell.append(`<div class="festival-event">${festival}</div>`);
+                    }
+                }
+            }
+        }
+
+        // 在 script 标签中添加计算器功能
+        let displayValue = '';
+        let currentOperator = null;
+        let firstOperand = null;
+        let waitingForSecondOperand = false;
+
+        function toggleCalculator() {
+            const calculator = document.getElementById('calculator');
+            calculator.style.display = calculator.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // 初始化计算器按钮事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const calculator = document.querySelector('.calculator');
+            if (calculator) {
+                calculator.addEventListener('click', function(event) {
+                    if (!event.target.matches('button')) return;
+
+                    const key = event.target;
+                    const keyValue = key.value;
+                    const screen = document.getElementById('calc-screen');
+                    const type = key.classList.contains('operator') ? 'operator' : 'number';
+
+                    if (type === 'number') {
+                        if (waitingForSecondOperand) {
+                            screen.value = keyValue;
+                            waitingForSecondOperand = false;
+                        } else {
+                            screen.value = screen.value === '0' ? keyValue : screen.value + keyValue;
+                        }
+                    } else {
+                        handleOperator(keyValue, screen);
+                    }
+                });
+            }
+        });
+
+        function handleOperator(operator, screen) {
+            switch(operator) {
+                case 'clear':
+                    screen.value = '0';
+                    firstOperand = null;
+                    currentOperator = null;
+                    waitingForSecondOperand = false;
+                    break;
+                case 'backspace':
+                    screen.value = screen.value.slice(0, -1) || '0';
+                    break;
+                case '=':
+                    if (currentOperator && !waitingForSecondOperand) {
+                        const secondOperand = parseFloat(screen.value);
+                        const expression = `${firstOperand} ${currentOperator} ${secondOperand}`;
+                        const result = calculate(firstOperand, secondOperand, currentOperator);
+                        screen.value = result;
+                        // 添加到历史记录
+                        addToHistory(expression, result);
+                        firstOperand = result;
+                        waitingForSecondOperand = true;
+                        currentOperator = null;
+                    }
+                    break;
+                default:
+                    if (currentOperator && !waitingForSecondOperand) {
+                        const secondOperand = parseFloat(screen.value);
+                        const result = calculate(firstOperand, secondOperand, currentOperator);
+                        screen.value = result;
+                        firstOperand = result;
+                    } else {
+                        firstOperand = parseFloat(screen.value);
+                    }
+                    currentOperator = operator;
+                    waitingForSecondOperand = true;
+            }
+        }
+
+        function calculate(first, second, operator) {
+            switch(operator) {
+                case '+': return first + second;
+                case '-': return first - second;
+                case '*': return first * second;
+                case '/': return first / second;
+                case '%': return first % second;
+                default: return second;
+            }
+        }
+
+        // 修改计算器相关的代码
+        let calcHistory = [];
+
+        function addToHistory(expression, result) {
+            const historyItem = {
+                id: Date.now(),
+                expression: expression,
+                result: result
+            };
+            calcHistory.push(historyItem);
+            updateHistoryDisplay();
+        }
+
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = calcHistory.map(item => `
+                <div class="history-item" id="history-${item.id}">
+                    <span>${item.expression} = ${item.result}</span>
+                    <span class="history-delete" onclick="deleteHistory(${item.id})">×</span>
+                </div>
+            `).join('');
+        }
+
+        function deleteHistory(id) {
+            calcHistory = calcHistory.filter(item => item.id !== id);
+            updateHistoryDisplay();
+        }
+    </script>
+</body>
+</html> 

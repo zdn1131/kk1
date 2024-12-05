@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天幕系统</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            width: 400px;
+            margin: 200px 0 100px 15% !important;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            font-size: 28px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .captcha-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .captcha-container input {
+            flex: 1;
+        }
+
+        #captchaDisplay {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 18px;
+            color: #fff;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #2196F3, #00BCD4);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #00BCD4, #2196F3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 188, 212, 0.3);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .container {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .sky-title {
+            position: absolute;
+            top: 10%;
+            left: 15% !important;
+            transform: translateX(0);
+            z-index: 2;
+            text-align: left;
+            width: auto;
+        }
+
+        .sky-title h1 {
+            font-size: 4em;
+            color: transparent;
+            background: linear-gradient(to right, #40c9ff, #e81cff, #40c9ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(64, 201, 255, 0.5);
+            margin: 0;
+            padding: 0;
+            animation: shine 3s linear infinite, float-title 6s ease-in-out infinite;
+        }
+
+        .sky-title p {
+            font-size: 1.5em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 10px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            animation: float-subtitle 6s ease-in-out infinite;
+        }
+
+        @keyframes shine {
+            0% {
+                background-position: 0% center;
+            }
+            100% {
+                background-position: 200% center;
+            }
+        }
+
+        @keyframes float-title {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-20px) scale(1.05);
+            }
+        }
+
+        @keyframes float-subtitle {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .sky-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, 
+                rgba(64, 201, 255, 0.8), 
+                rgba(232, 28, 255, 0.5),
+                transparent);
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="sky-title">
+        <h1>天幕系统</h1>
+    </div>
+    <div class="container">
+        <h2>登录界面</h2>
+        <form id="loginForm" onsubmit="return validateForm()">
+            <div class="form-group">
+                <label for="username">账号：</label>
+                <input type="text" id="username" required placeholder="请输入账号" title="请输入您的账号">
+            </div>
+            <div class="form-group">
+                <label for="password">密码：</label>
+                <input type="password" id="password" required placeholder="请输入密码" title="请输入您的密码">
+            </div>
+            <div class="form-group captcha-container">
+                <label for="captchaInput">验证码：</label>
+                <input type="text" id="captchaInput" required placeholder="请输入验证码" title="请输入验证码">
+                <span id="captchaDisplay"></span>
+            </div>
+            <button type="submit">登录</button>
+        </form>
+    </div>
+
+    <script>
+        // Three.js 场景设置
+        let scene = new THREE.Scene();
+        let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        let renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // 创建地球
+        let geometry = new THREE.SphereGeometry(3, 32, 32);
+        let textureLoader = new THREE.TextureLoader();
+        let texture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+        let material = new THREE.MeshPhongMaterial({
+            map: texture,
+            shininess: 0.2
+        });
+        let earth = new THREE.Mesh(geometry, material);
+        earth.position.x = 8;
+        scene.add(earth);
+
+        // 添加星星背景
+        let starsGeometry = new THREE.BufferGeometry();
+        let starsMaterial = new THREE.PointsMaterial({
+            color: 0xFFFFFF,
+            size: 0.1
+        });
+
+        let starsVertices = [];
+        for(let i = 0; i < 10000; i++) {
+            const x = (Math.random() - 0.5) * 2000;
+            const y = (Math.random() - 0.5) * 2000;
+            const z = (Math.random() - 0.5) * 2000;
+            starsVertices.push(x, y, z);
+        }
+
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+        let stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // 添加光源
+        let ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+
+        let pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(50, 50, 50);
+        scene.add(pointLight);
+
+        camera.position.z = 12;
+        camera.position.x = 4;
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            earth.rotation.y += 0.002;
+            earth.rotation.x = 0.1;
+            stars.rotation.y += 0.0005;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // 窗口大小调整
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // 验证码相关代码
+        let captchaValue = '';
+
+        function generateCaptcha() {
+            captchaValue = Math.floor(10000 + Math.random() * 90000).toString();
+            document.getElementById('captchaDisplay').textContent = captchaValue;
+        }
+
+        // 添加服务器配置
+        const SERVER_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000'
+            : `http://${window.location.hostname}:3000`;
+
+        // 修改验证表单函数
+        async function validateForm() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const captchaInput = document.getElementById('captchaInput').value;
+
+            if (captchaInput !== captchaValue) {
+                alert('验证码错误！');
+                return false;
+            }
+
+            try {
+                // 读取 users.csv 文件
+                const response = await fetch('users.csv');
+                const usersData = await response.text();
+                
+                // 解析用户数据
+                const users = usersData.split('\n').map(line => {
+                    const [user, pass] = line.trim().split(',');
+                    return { username: user, password: pass };
+                });
+
+                // 验证用户
+                const user = users.find(u => 
+                    u.username === username && u.password === password
+                );
+
+                if (user) {
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    sessionStorage.setItem('currentUser', username);
+                    window.location.href = 'display.html';
+                } else {
+                    alert('用户名或密码错误！');
+                }
+            } catch (error) {
+                console.error('读取用户数据失败:', error);
+                alert('登录失败，请重试！');
+            }
+
+            return false;
+        }
+
+        // 页面加载时生成验证码
+        generateCaptcha();
+
+        // 每60秒刷新一次验证码
+        setInterval(generateCaptcha, 60000);
+    </script>
+</body>
+</html>
