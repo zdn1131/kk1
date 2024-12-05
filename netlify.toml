@@ -1,7 +1,12 @@
 [build]
-  publish = "/"
+  publish = "tm"
+  functions = "functions"
 
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/kk.html"
   status = 200
+
+# 添加这个插件配置
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
