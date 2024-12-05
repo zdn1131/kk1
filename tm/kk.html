@@ -299,11 +299,6 @@
             document.getElementById('captchaDisplay').textContent = captchaValue;
         }
 
-        // 添加服务器配置
-        const SERVER_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000'
-            : `http://${window.location.hostname}:3000`;
-
         // 修改验证表单函数
         async function validateForm() {
             const username = document.getElementById('username').value;
